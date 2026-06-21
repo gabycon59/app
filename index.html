@@ -179,8 +179,8 @@ var F73=40;
 var F74=35;
 var F75=65;
 var F76=35;
-var F77=0; // Mano de obra gabinete
-var F78=0; // Mano de obra pintura
+var F77=0; // reservado
+var F78=0; // reservado
 // Rastreo de qué claves vinieron del sheet
 var _fromSheet = {};   
 
@@ -209,8 +209,6 @@ function renderPreciosTabla(){
     {label:'Bisagra ($/ml)',    val:F74, key:'F74'},
     {label:'Cierre ($)',        val:F75, key:'F75'},
     {label:'Empaque ($/ml)',    val:F76, key:'F76'},
-    {label:'M.O. Gabinete ($)', val:F77, key:'F77'},
-    {label:'M.O. Pintura ($)',  val:F78, key:'F78'},
   ];
   extras.forEach(function(e){
     var desdeSheet=!!_fromSheet[e.key];
@@ -240,8 +238,6 @@ function aplicarPrecios(p){
     else if(key.indexOf('BISAGRA')===0){ F74=val; _fromSheet['F74']=true; }
     else if(key==='CIERRE'){ F75=val; _fromSheet['F75']=true; }
     else if(key.indexOf('EMPAQUE')===0){ F76=val; _fromSheet['F76']=true; }
-    else if(key==='MANO_DE_OBRA_GABINETE'||key==='MANO DE OBRA GABINETE'){ F77=val; _fromSheet['F77']=true; }
-    else if(key==='MANO_DE_OBRA_PINTURA'||key==='MANO DE OBRA PINTURA'){ F78=val; _fromSheet['F78']=true; }
   }
 }
 
