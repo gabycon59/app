@@ -51,6 +51,21 @@
     white-space:pre-wrap;color:var(--muted);margin-top:12px;line-height:1.5}
   .hint{font-size:11px;color:var(--muted);margin-top:4px}
   .cant-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+  .acordeon-btn{width:100%;background:none;border:none;color:var(--text);padding:0;
+    display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:13px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.5px;color:var(--accent)}
+  .acordeon-btn .arrow{transition:transform .25s;font-style:normal;font-size:16px}
+  .acordeon-btn.open .arrow{transform:rotate(180deg)}
+  .acordeon-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .acordeon-body.open{max-height:600px}
+  .precio-tabla{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}
+  .precio-tabla th{color:var(--muted);font-weight:600;text-align:left;padding:6px 4px;
+    border-bottom:1px solid var(--line);font-size:12px;text-transform:uppercase}
+  .precio-tabla td{padding:8px 4px;border-bottom:1px solid var(--line)33}
+  .precio-tabla tr:last-child td{border-bottom:none}
+  .precio-tabla .val{text-align:right;font-weight:700;color:var(--text)}
+  .precio-tabla .src-sheet{color:var(--ok)}
+  .precio-tabla .src-default{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -135,16 +150,79 @@
   <div class="quote-box" id="quote"></div>
 </div>
 
+<div class="card" style="margin-top:14px">
+  <button class="acordeon-btn" id="acordeonBtn" onclick="toggleAcordeon()">
+    <span>💰 Precios cargados</span>
+    <i class="arrow">▼</i>
+  </button>
+  <div class="acordeon-body" id="acordeonBody">
+    <table class="precio-tabla">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th style="text-align:right">Precio</th>
+          <th style="text-align:right">Fuente</th>
+        </tr>
+      </thead>
+      <tbody id="preciosTbody"></tbody>
+    </table>
+  </div>
+</div>
+
 <script>
 // ===== Precios — se leen de tu Google Sheet, con respaldo local =====
 var SHEET_ID='1iRD93pkI2b_WskdQSOmC3Wbm6TnhL5i5VGbPq5BaOcU';
 
 var DEFAULT_LAMINA = {14:486.13, 16:393.47, 18:315.73, 20:273.33, 22:215, 24:205};
 var PRECIO_LAMINA = Object.assign({}, DEFAULT_LAMINA);
-var F73=40;   
-var F74=35;   
-var F75=65;   
-var F76=35;   
+var F73=40;
+var F74=35;
+var F75=65;
+var F76=35;
+var F77=0; // Mano de obra gabinete
+var F78=0; // Mano de obra pintura
+// Rastreo de qué claves vinieron del sheet
+var _fromSheet = {};   
+
+function toggleAcordeon(){
+  var btn=document.getElementById('acordeonBtn');
+  var body=document.getElementById('acordeonBody');
+  btn.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+function renderPreciosTabla(){
+  var rows='';
+  var cals=[14,16,18,20,22,24];
+  cals.forEach(function(c){
+    var val=PRECIO_LAMINA[c];
+    var desdeSheet=!!_fromSheet['cal'+c];
+    rows+='<tr>'
+      +'<td>Lámina Cal '+c+' ($/m²)</td>'
+      +'<td class="val">$'+val.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td class="val '+(desdeSheet?'src-sheet':'src-default')+'" style="text-align:right;font-size:12px">'
+      +(desdeSheet?'📗 Sheet':'📋 Default')+'</td>'
+      +'</tr>';
+  });
+  var extras=[
+    {label:'Pintura ($/m²)',    val:F73, key:'F73'},
+    {label:'Bisagra ($/ml)',    val:F74, key:'F74'},
+    {label:'Cierre ($)',        val:F75, key:'F75'},
+    {label:'Empaque ($/ml)',    val:F76, key:'F76'},
+    {label:'M.O. Gabinete ($)', val:F77, key:'F77'},
+    {label:'M.O. Pintura ($)',  val:F78, key:'F78'},
+  ];
+  extras.forEach(function(e){
+    var desdeSheet=!!_fromSheet[e.key];
+    rows+='<tr>'
+      +'<td>'+e.label+'</td>'
+      +'<td class="val">$'+e.val.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td class="val '+(desdeSheet?'src-sheet':'src-default')+'" style="text-align:right;font-size:12px">'
+      +(desdeSheet?'📗 Sheet':'📋 Default')+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('preciosTbody').innerHTML=rows;
+}
 
 function setStatus(color,txt){
   document.getElementById('statusDot').style.background=color;
@@ -157,11 +235,13 @@ function aplicarPrecios(p){
     var val=parseFloat(String(p[k]).replace(/[^0-9.\-]/g,''));
     if(isNaN(val)) continue;
     var m=key.match(/LAMINA[ _]*CAL[ _]*(\d+)/);
-    if(m){ PRECIO_LAMINA[parseInt(m[1])]=val; continue; }
-    if(key.indexOf('PINTURA_M2')===0||key==='PINTURA M2') F73=val;
-    else if(key.indexOf('BISAGRA')===0) F74=val;
-    else if(key.indexOf('CIERRE')===0) F75=val;
-    else if(key.indexOf('EMPAQUE')===0) F76=val;
+    if(m){ var cal=parseInt(m[1]); PRECIO_LAMINA[cal]=val; _fromSheet['cal'+cal]=true; continue; }
+    if(key==='PINTURA_M2'||key==='PINTURA M2'){ F73=val; _fromSheet['F73']=true; }
+    else if(key.indexOf('BISAGRA')===0){ F74=val; _fromSheet['F74']=true; }
+    else if(key==='CIERRE'){ F75=val; _fromSheet['F75']=true; }
+    else if(key.indexOf('EMPAQUE')===0){ F76=val; _fromSheet['F76']=true; }
+    else if(key==='MANO_DE_OBRA_GABINETE'||key==='MANO DE OBRA GABINETE'){ F77=val; _fromSheet['F77']=true; }
+    else if(key==='MANO_DE_OBRA_PINTURA'||key==='MANO DE OBRA PINTURA'){ F78=val; _fromSheet['F78']=true; }
   }
 }
 
@@ -180,6 +260,7 @@ window.__precios = function(resp){
       var hora=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
       setStatus('#16a34a','Precios actualizados desde Google Sheets · '+hora);
       calcular();
+      renderPreciosTabla();
     }
   }catch(e){
     setStatus('#ef4444','No se pudo leer la hoja');
@@ -294,6 +375,7 @@ document.querySelectorAll('input,select').forEach(function(el){
   el.addEventListener('input',calcular); el.addEventListener('change',calcular);
 });
 cargarPrecios();
+renderPreciosTabla();
 </script>
 </body>
 </html>
