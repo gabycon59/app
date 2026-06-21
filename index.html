@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cotizador de Gabinetes</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --card2:#273449;
+    --accent:#2563eb; --accent2:#1d4ed8; --ok:#16a34a;
+    --text:#e2e8f0; --muted:#94a3b8; --line:#334155; --field:#0b1220;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--text);padding:14px;padding-bottom:60px;}
+  h1{font-size:20px;margin:4px 0 2px;display:flex;align-items:center;gap:8px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+  input,select{width:100%;background:var(--field);border:1px solid var(--line);color:var(--text);
+    border-radius:12px;padding:14px 12px;font-size:17px;font-weight:600;outline:none;appearance:none}
+  input:focus,select:focus{border-color:var(--accent)}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+  .field{margin-bottom:12px}
+  .section-title{font-size:13px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:0 0 12px}
+  .toggles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .toggle{display:flex;align-items:center;justify-content:space-between;background:var(--field);
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .toggle span{font-size:15px;font-weight:600}
+  .switch{position:relative;width:48px;height:28px;flex:0 0 auto}
+  .switch input{opacity:0;width:0;height:0;position:absolute}
+  .slider{position:absolute;inset:0;background:var(--line);border-radius:20px;transition:.2s;cursor:pointer}
+  .slider:before{content:"";position:absolute;height:22px;width:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked + .slider{background:var(--accent)}
+  .switch input:checked + .slider:before{transform:translateX(20px)}
+  details{margin-top:4px}
+  summary{color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;padding:6px 0;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary:before{content:"⚙  ";}
+  .result{background:linear-gradient(160deg,#1e3a8a,#1e293b);border:1px solid #3b5bdb;text-align:center}
+  .price-label{color:#bfdbfe;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+  .price{font-size:42px;font-weight:800;line-height:1.1;color:#fff}
+  .price small{font-size:18px;font-weight:600;color:#bfdbfe}
+  .breakdown{display:flex;justify-content:space-between;border-top:1px solid #3b5bdb55;padding:10px 4px 0;margin-top:14px;font-size:14px}
+  .breakdown .muted{color:#bfdbfe}
+  .row-tot{font-size:16px;font-weight:700;color:#fff;margin-top:6px}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  button{border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;color:#fff}
+  .wa{background:#25D366;color:#06311a}
+  .copy{background:var(--card2);color:var(--text);border:1px solid var(--line)}
+  .quote-box{background:var(--field);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;
+    white-space:pre-wrap;color:var(--muted);margin-top:12px;line-height:1.5}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px}
+  .cant-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+</style>
+</head>
+<body>
+
+<h1>🗄️ Cotizador de Gabinetes</h1>
+<p class="sub">NEMA 3R · captura medidas y obtén el precio al instante</p>
+<div id="status" style="font-size:12px;color:var(--muted);margin:-8px 0 14px;display:flex;align-items:center;gap:6px">
+  <span id="statusDot" style="width:8px;height:8px;border-radius:50%;background:#64748b;display:inline-block"></span>
+  <span id="statusTxt">Cargando precios…</span>
+</div>
+
+<div class="card">
+  <p class="section-title">Medidas (cm)</p>
+  <div class="grid">
+    <div><label>Alto</label><input id="alto" type="number" inputmode="decimal" value="30"></div>
+    <div><label>Ancho</label><input id="ancho" type="number" inputmode="decimal" value="20"></div>
+    <div><label>Fondo</label><input id="fondo" type="number" inputmode="decimal" value="20"></div>
+  </div>
+</div>
+
+<div class="card">
+  <p class="section-title">Calibres</p>
+  <div class="grid">
+    <div><label>Cuerpo</label><select id="calCuerpo"></select></div>
+    <div><label>Platina</label><select id="calPlatina"></select></div>
+    <div><label>Puerta</label><select id="calPuerta"></select></div>
+  </div>
+</div>
+
+<div class="card">
+  <p class="section-title">Opciones</p>
+  <div class="toggles">
+    <label class="toggle" style="margin:0"><span>Pintura</span>
+      <span class="switch"><input id="pintura" type="checkbox" checked><span class="slider"></span></span></label>
+    <label class="toggle" style="margin:0"><span>Platina</span>
+      <span class="switch"><input id="platina" type="checkbox" checked><span class="slider"></span></span></label>
+  </div>
+  <div class="grid2" style="margin-top:12px">
+    <div><label>Puertas</label><input id="puertas" type="number" inputmode="numeric" value="1"></div>
+    <div><label>Margen %</label><input id="margen" type="number" inputmode="decimal" value="45"></div>
+  </div>
+
+  <details>
+    <summary>Opciones avanzadas</summary>
+    <div class="grid" style="margin-top:12px">
+      <div><label>Cierres</label><input id="cierres" type="number" inputmode="numeric" value="1"></div>
+      <div><label>Empaque</label>
+        <select id="empaque"><option value="0">No</option><option value="1">Sí</option></select></div>
+      <div><label>Cantidad</label><input id="cantidad" type="number" inputmode="numeric" value="1"></div>
+    </div>
+    <p class="hint">El margen 45% reproduce el cálculo de tu hoja (precio = costo ÷ 0.55).</p>
+  </details>
+</div>
+
+<div class="card result">
+  <div class="price-label">Precio unitario (sin IVA)</div>
+  <div class="price">$<span id="precio">0</span></div>
+  <div class="breakdown"><span class="muted">Costo</span><span id="costo">$0</span></div>
+  <div class="breakdown"><span class="muted">IVA 16%</span><span id="iva">$0</span></div>
+  <div class="breakdown row-tot"><span>Total c/IVA (<span id="cantLbl">1</span> pza)</span><span id="total">$0</span></div>
+
+  <div class="btns">
+    <button class="copy" onclick="copiar()">📋 Copiar</button>
+    <button class="wa" onclick="whatsapp()">💬 WhatsApp</button>
+  </div>
+  <div class="quote-box" id="quote"></div>
+</div>
+
+<script>
+// ===== Precios — se leen de tu Google Sheet, con respaldo local =====
+// Hoja: "Costos Cotizador" (Google Sheets nativa, compartida con enlace)
+var SHEET_ID='1iRD93pkI2b_WskdQSOmC3Wbm6TnhL5i5VGbPq5BaOcU';
+
+// Valores por defecto (si no hay internet ni respaldo guardado)
+var DEFAULT_LAMINA = {14:486.13, 16:393.47, 18:315.73, 20:273.33, 22:215, 24:205};
+var PRECIO_LAMINA = Object.assign({}, DEFAULT_LAMINA);
+var F73=40;   // pintura por m²
+var F74=35;   // bisagra
+var F75=65;   // cierre por pza
+var F76=35;   // empaque por metro
+
+function setStatus(color,txt){
+  document.getElementById('statusDot').style.background=color;
+  document.getElementById('statusTxt').textContent=txt;
+}
+
+// Aplica un objeto {clave:valor} a las variables de precio
+function aplicarPrecios(p){
+  for(var k in p){
+    var key=k.toUpperCase().replace(/\s+/g,' ').trim();
+    var val=parseFloat(String(p[k]).replace(/[^0-9.\-]/g,''));
+    if(isNaN(val)) continue;
+    var m=key.match(/LAMINA[ _]*CAL[ _]*(\d+)/);
+    if(m){ PRECIO_LAMINA[parseInt(m[1])]=val; continue; }
+    if(key.indexOf('PINTURA_M2')===0||key==='PINTURA M2') F73=val;
+    else if(key.indexOf('BISAGRA')===0) F74=val;
+    else if(key.indexOf('CIERRE')===0) F75=val;
+    else if(key.indexOf('EMPAQUE')===0) F76=val;
+  }
+}
+
+// Recibe la respuesta de Google Sheets (carga vía <script>, sin bloqueo de CORS)
+window.__precios = function(resp){
+  try{
+    var rows=resp.table.rows, p={};
+    rows.forEach(function(r){
+      if(!r.c||!r.c[0]||r.c[0].v==null) return;
+      var clave=String(r.c[0].v);
+      var valor=(r.c[1]&&r.c[1].v!=null)?r.c[1].v:(r.c[1]&&r.c[1].f);
+      if(clave) p[clave]=valor;
+    });
+    if(Object.keys(p).length){
+      aplicarPrecios(p);
+      try{ localStorage.setItem('precios',JSON.stringify(p)); }catch(e){}
+      var hora=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+      setStatus('#16a34a','Precios actualizados desde Google Sheets · '+hora);
+      calcular();
+    }
+  }catch(e){
+    setStatus('#ef4444','No se pudo leer la hoja');
+  }
+};
+
+function cargarPrecios(){
+  // 1) respaldo local inmediato (para que funcione al instante / offline)
+  try{
+    var cache=localStorage.getItem('precios');
+    if(cache){ aplicarPrecios(JSON.parse(cache)); setStatus('#eab308','Usando precios guardados'); }
+  }catch(e){}
+  calcular();
+  // 2) refrescar desde Google Sheets por inyección de <script> (funciona con archivo local)
+  var s=document.createElement('script');
+  s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json;responseHandler:__precios&_='+Date.now();
+  s.onerror=function(){
+    if(!localStorage.getItem('precios')) setStatus('#ef4444','Sin conexión · usando precios por defecto');
+  };
+  document.head.appendChild(s);
+}
+
+// llenar selects de calibre
+['calCuerpo','calPlatina','calPuerta'].forEach(function(id){
+  var sel=document.getElementById(id);
+  [14,16,18,20,22,24].forEach(function(c){
+    var o=document.createElement('option'); o.value=c; o.textContent='Cal '+c; sel.appendChild(o);
+  });
+  sel.value=22;
+});
+
+function num(id){ var v=parseFloat(document.getElementById(id).value); return isNaN(v)?0:v; }
+function chk(id){ return document.getElementById(id).checked?1:0; }
+// área cm² -> m² con 15% de desperdicio
+function M2(cm2){ return cm2/100/100*1.15; }
+function money(n){ return n.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function calcular(){
+  var alto=num('alto'), ancho=num('ancho'), fondo=num('fondo');
+  var pCuerpo=PRECIO_LAMINA[num('calCuerpo')]||0;
+  var pPlatina=PRECIO_LAMINA[num('calPlatina')]||0;
+  var pPuerta=PRECIO_LAMINA[num('calPuerta')]||0;
+  var pintura=chk('pintura'), platina=chk('platina');
+  var puertas=num('puertas'), cierres=num('cierres'), empaque=parseFloat(document.getElementById('empaque').value)||0;
+  var margen=num('margen'), cantidad=num('cantidad')||1;
+
+  // PUERTA
+  var d27=M2((alto+4)*(ancho+4)*1.2);
+  var f27=pPuerta*d27, g27=d27*F73*2*pintura, i27=f27*0.5, j27=i27*0.8*pintura;
+  // PLATINA
+  var d28=M2(alto*ancho*1.2)*platina;
+  var f28=pPlatina*d28*platina, g28=d28*F73*2*pintura*platina, i28=f28*0.5, j28=i28*0.8*pintura;
+  // CUERPO
+  var d29=M2(alto*fondo*2+alto*ancho+alto*2*4*1.2);
+  var f29=pCuerpo*d29, g29=d29*F73*2*pintura, i29=f29*0.5, j29=i29*0.8*pintura;
+  // GORRO
+  var d30=M2((ancho+0.04)*(fondo+0.08)*1.2);
+  var f30=pCuerpo*d30, g30=d30*F73*2*pintura, i30=f30*0.5, j30=i30*0.8*pintura;
+  // TAPA INFERIOR
+  var d31=M2((ancho+0.04)*(fondo+0.04)*1.2);
+  var f31=pCuerpo*d31, g31=d31*F73*2*pintura, i31=f31*0.5, j31=i31*0.8*pintura;
+  // BISAGRA
+  var d32=(alto*puertas*1.2)*1.5/100;
+  var h32=d32*F74*puertas, i32=h32*0.5;
+  // CIERRE
+  var h33=cierres*F75;
+  // EMPAQUE
+  var d34=(alto*2+ancho*2)/100;
+  var h34=d34*F76*empaque;
+
+  var F41=f27+f28+f29+f30+f31;
+  var G43=(g27+g28+g29+g30+g31)*pintura;
+  var H41=h32+h33+h34;
+  var I41=i27+i28+i29+i30+i31+i32;
+  var J43=(j27+j28+j29+j30+j31)*pintura;
+
+  var costo=F41+G43+H41+I41+J43;
+  var precio=costo/(1-margen/100);
+  var iva=precio*0.16;
+  var totalUnit=precio+iva;
+  var total=totalUnit*cantidad;
+
+  document.getElementById('precio').textContent=money(precio);
+  document.getElementById('costo').textContent='$'+money(costo);
+  document.getElementById('iva').textContent='$'+money(iva);
+  document.getElementById('total').textContent='$'+money(total);
+  document.getElementById('cantLbl').textContent=cantidad;
+
+  // descripción estilo cotización
+  var desc='GABINETE NEMA 3R MEDIDAS '+(alto||0)+'X'+(ancho||0)+'X'+(fondo||0)
+    +', FABRICADO EN LAMINA GALVANIZADA CAL '+num('calCuerpo')
+    +(platina?' Y PLATINA CAL '+num('calPlatina'):'')
+    +(pintura?', PINTURA EN POLVO TERMO ENDURECIBLE':', SIN PINTAR');
+  var q=desc+'\n\n'+cantidad+' PZA(S)  —  $'+money(precio)+' c/u + IVA';
+  if(cantidad>1) q+='\nTotal con IVA: $'+money(total);
+  document.getElementById('quote').textContent=q;
+  window._quote=q;
+}
+
+function copiar(){
+  navigator.clipboard.writeText(window._quote).then(function(){
+    var b=event.target; var t=b.textContent; b.textContent='✓ Copiado'; setTimeout(function(){b.textContent=t;},1500);
+  });
+}
+function whatsapp(){ window.open('https://wa.me/?text='+encodeURIComponent(window._quote),'_blank'); }
+
+document.querySelectorAll('input,select').forEach(function(el){
+  el.addEventListener('input',calcular); el.addEventListener('change',calcular);
+});
+cargarPrecios();
+</script>
+</body>
+</html>
