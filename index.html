@@ -173,7 +173,7 @@
 // ===== Precios — se leen de tu Google Sheet, con respaldo local =====
 var SHEET_ID='1iRD93pkI2b_WskdQSOmC3Wbm6TnhL5i5VGbPq5BaOcU';
 
-var DEFAULT_LAMINA = {14:486.13, 16:393.47, 18:315.73, 20:273.33, 22:215, 24:205};
+var DEFAULT_LAMINA = {14:486.13, 16:393.47, 18:315.73, 20:273.33, 22:215};
 var PRECIO_LAMINA = Object.assign({}, DEFAULT_LAMINA);
 var F73=40;
 var F74=35;
@@ -193,7 +193,7 @@ function toggleAcordeon(){
 
 function renderPreciosTabla(){
   var rows='';
-  var cals=[14,16,18,20,22,24];
+  var cals=[14,16,18,20,22];
   cals.forEach(function(c){
     var val=PRECIO_LAMINA[c];
     var desdeSheet=!!_fromSheet['cal'+c];
@@ -283,7 +283,7 @@ function cargarPrecios(){
 
 ['calCuerpo','calPlatina','calPuerta'].forEach(function(id){
   var sel=document.getElementById(id);
-  [14,16,18,20,22,24].forEach(function(c){
+  [14,16,18,20,22].forEach(function(c){
     var o=document.createElement('option'); o.value=c; o.textContent='Cal '+c; sel.appendChild(o);
   });
   sel.value=22;
