@@ -36,10 +36,6 @@
   .slider:before{content:"";position:absolute;height:22px;width:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
   .switch input:checked + .slider{background:var(--accent)}
   .switch input:checked + .slider:before{transform:translateX(20px)}
-  details{margin-top:4px}
-  summary{color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;padding:6px 0;list-style:none}
-  summary::-webkit-details-marker{display:none}
-  summary:before{content:"⚙  ";}
   .result{background:linear-gradient(160deg,#1e3a8a,#1e293b);border:1px solid #3b5bdb;text-align:center}
   .price-label{color:#bfdbfe;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
   .price{font-size:42px;font-weight:800;line-height:1.1;color:#fff}
@@ -93,26 +89,42 @@
       <span class="switch"><input id="platina" type="checkbox" checked><span class="slider"></span></span></label>
   </div>
   <div class="grid2" style="margin-top:12px">
-    <div><label>Puertas</label><input id="puertas" type="number" inputmode="numeric" value="1"></div>
+    <div>
+      <label>Puertas</label>
+      <select id="puertas">
+        <option value="0">0 Puertas</option>
+        <option value="1" selected>1 Puerta</option>
+        <option value="2">2 Puertas</option>
+      </select>
+    </div>
     <div><label>Margen %</label><input id="margen" type="number" inputmode="decimal" value="45"></div>
   </div>
+</div>
 
-  <details>
-    <summary>Opciones avanzadas</summary>
-    <div class="grid" style="margin-top:12px">
-      <div><label>Cierres</label><input id="cierres" type="number" inputmode="numeric" value="1"></div>
-      <div><label>Empaque</label>
-        <select id="empaque"><option value="0">No</option><option value="1">Sí</option></select></div>
-      <div><label>Cantidad</label><input id="cantidad" type="number" inputmode="numeric" value="1"></div>
+<div class="card">
+  <p class="section-title">Opciones Avanzadas</p>
+  <div class="grid">
+    <div>
+      <label>Cierres</label>
+      <select id="cierres">
+        <option value="0">0 Cierres</option>
+        <option value="1" selected>1 Cierre</option>
+        <option value="2">2 Cierres</option>
+        <option value="3">3 Cierres</option>
+        <option value="4">4 Cierres</option>
+      </select>
     </div>
-    <p class="hint">El margen 45% reproduce el cálculo de tu hoja (precio = costo ÷ 0.55).</p>
-  </details>
+    <div><label>Empaque</label>
+      <select id="empaque"><option value="0">No</option><option value="1">Sí</option></select></div>
+    <div><label>Cantidad</label><input id="cantidad" type="number" inputmode="numeric" value="1"></div>
+  </div>
+  <p class="hint" style="margin-top:12px">El margen 45% reproduce el cálculo de tu hoja (precio = costo ÷ 0.55).</p>
 </div>
 
 <div class="card result">
   <div class="price-label">Precio unitario (sin IVA)</div>
   <div class="price">$<span id="precio">0</span></div>
-  <div class="breakdown"><span class="muted">Costo</span><span id="costo">$0</span></div>
+  <div class="breakdown"><span class="muted">Precio Unitario</span><span id="costo">$0</span></div>
   <div class="breakdown"><span class="muted">IVA 16%</span><span id="iva">$0</span></div>
   <div class="breakdown row-tot"><span>Total c/IVA (<span id="cantLbl">1</span> pza)</span><span id="total">$0</span></div>
 
@@ -125,23 +137,20 @@
 
 <script>
 // ===== Precios — se leen de tu Google Sheet, con respaldo local =====
-// Hoja: "Costos Cotizador" (Google Sheets nativa, compartida con enlace)
 var SHEET_ID='1iRD93pkI2b_WskdQSOmC3Wbm6TnhL5i5VGbPq5BaOcU';
 
-// Valores por defecto (si no hay internet ni respaldo guardado)
 var DEFAULT_LAMINA = {14:486.13, 16:393.47, 18:315.73, 20:273.33, 22:215, 24:205};
 var PRECIO_LAMINA = Object.assign({}, DEFAULT_LAMINA);
-var F73=40;   // pintura por m²
-var F74=35;   // bisagra
-var F75=65;   // cierre por pza
-var F76=35;   // empaque por metro
+var F73=40;   
+var F74=35;   
+var F75=65;   
+var F76=35;   
 
 function setStatus(color,txt){
   document.getElementById('statusDot').style.background=color;
   document.getElementById('statusTxt').textContent=txt;
 }
 
-// Aplica un objeto {clave:valor} a las variables de precio
 function aplicarPrecios(p){
   for(var k in p){
     var key=k.toUpperCase().replace(/\s+/g,' ').trim();
@@ -156,7 +165,6 @@ function aplicarPrecios(p){
   }
 }
 
-// Recibe la respuesta de Google Sheets (carga vía <script>, sin bloqueo de CORS)
 window.__precios = function(resp){
   try{
     var rows=resp.table.rows, p={};
@@ -179,13 +187,11 @@ window.__precios = function(resp){
 };
 
 function cargarPrecios(){
-  // 1) respaldo local inmediato (para que funcione al instante / offline)
   try{
     var cache=localStorage.getItem('precios');
     if(cache){ aplicarPrecios(JSON.parse(cache)); setStatus('#eab308','Usando precios guardados'); }
   }catch(e){}
   calcular();
-  // 2) refrescar desde Google Sheets por inyección de <script> (funciona con archivo local)
   var s=document.createElement('script');
   s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json;responseHandler:__precios&_='+Date.now();
   s.onerror=function(){
@@ -194,7 +200,6 @@ function cargarPrecios(){
   document.head.appendChild(s);
 }
 
-// llenar selects de calibre
 ['calCuerpo','calPlatina','calPuerta'].forEach(function(id){
   var sel=document.getElementById(id);
   [14,16,18,20,22,24].forEach(function(c){
@@ -205,7 +210,6 @@ function cargarPrecios(){
 
 function num(id){ var v=parseFloat(document.getElementById(id).value); return isNaN(v)?0:v; }
 function chk(id){ return document.getElementById(id).checked?1:0; }
-// área cm² -> m² con 15% de desperdicio
 function M2(cm2){ return cm2/100/100*1.15; }
 function money(n){ return n.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
@@ -219,7 +223,7 @@ function calcular(){
   var margen=num('margen'), cantidad=num('cantidad')||1;
 
   // PUERTA
-  var d27=M2((alto+4)*(ancho+4)*1.2);
+  var d27=M2((alto+4)*(ancho+4)*1.2) * 1;
   var f27=pPuerta*d27, g27=d27*F73*2*pintura, i27=f27*0.5, j27=i27*0.8*pintura;
   // PLATINA
   var d28=M2(alto*ancho*1.2)*platina;
@@ -255,7 +259,14 @@ function calcular(){
   var total=totalUnit*cantidad;
 
   document.getElementById('precio').textContent=money(precio);
-  document.getElementById('costo').textContent='$'+money(costo);
+  //document.getElementById('costo').textContent='$'+money(costo);
+  
+document.getElementById('costo').textContent='$'+money(precio);
+
+  
+
+
+
   document.getElementById('iva').textContent='$'+money(iva);
   document.getElementById('total').textContent='$'+money(total);
   document.getElementById('cantLbl').textContent=cantidad;
@@ -263,6 +274,7 @@ function calcular(){
   // descripción estilo cotización
   var desc='GABINETE NEMA 3R MEDIDAS '+(alto||0)+'X'+(ancho||0)+'X'+(fondo||0)
     +', FABRICADO EN LAMINA GALVANIZADA CAL '+num('calCuerpo')
+    +' ('+puertas+' PUERTA(S) CON '+cierres+' CIERRE(S))'
     +(platina?' Y PLATINA CAL '+num('calPlatina'):'')
     +(pintura?', PINTURA EN POLVO TERMO ENDURECIBLE':', SIN PINTAR');
   var q=desc+'\n\n'+cantidad+' PZA(S)  —  $'+money(precio)+' c/u + IVA';
