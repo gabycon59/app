@@ -152,7 +152,7 @@
 
 <div class="card" style="margin-top:14px">
   <button class="acordeon-btn" id="acordeonBtn" onclick="toggleAcordeon()">
-    <span>💰 Precios cargados</span>
+    <span>💰 Precios y Utilidades</span>
     <i class="arrow">▼</i>
   </button>
   <div class="acordeon-body" id="acordeonBody">
@@ -160,8 +160,8 @@
       <thead>
         <tr>
           <th>Concepto</th>
-          <th style="text-align:right">Precio</th>
-          <th style="text-align:right">Fuente</th>
+          <th style="text-align:right">Precio / Valor</th>
+          <th style="text-align:right">Fuente / Info</th>
         </tr>
       </thead>
       <tbody id="preciosTbody"></tbody>
@@ -189,6 +189,40 @@ function toggleAcordeon(){
   var body=document.getElementById('acordeonBody');
   btn.classList.toggle('open');
   body.classList.toggle('open');
+}
+
+// Función auxiliar para calcular el costo actual de manera dinámica
+function calcularCostoInterno(){
+  var alto=num('alto'), ancho=num('ancho'), fondo=num('fondo');
+  var pCuerpo=PRECIO_LAMINA[num('calCuerpo')]||0;
+  var pPlatina=PRECIO_LAMINA[num('calPlatina')]||0;
+  var pPuerta=PRECIO_LAMINA[num('calPuerta')]||0;
+  var pintura=chk('pintura'), platina=chk('platina');
+  var puertas=num('puertas'), cierres=num('cierres'), empaque=parseFloat(document.getElementById('empaque').value)||0;
+
+  var d27=M2((alto+4)*(ancho+4)*1.2) * 1;
+  var f27=pPuerta*d27, g27=d27*F73*2*pintura, i27=f27*0.5, j27=i27*0.8*pintura;
+  var d28=M2(alto*ancho*1.2)*platina;
+  var f28=pPlatina*d28*platina, g28=d28*F73*2*pintura*platina, i28=f28*0.5, j28=i28*0.8*pintura;
+  var d29=M2(alto*fondo*2+alto*ancho+alto*2*4*1.2);
+  var f29=pCuerpo*d29, g29=d29*F73*2*pintura, i29=f29*0.5, j29=i29*0.8*pintura;
+  var d30=M2((ancho+0.04)*(fondo+0.08)*1.2);
+  var f30=pCuerpo*d30, g30=d30*F73*2*pintura, i30=f30*0.5, j30=i30*0.8*pintura;
+  var d31=M2((ancho+0.04)*(fondo+0.04)*1.2);
+  var f31=pCuerpo*d31, g31=d31*F73*2*pintura, i31=f31*0.5, j31=i31*0.8*pintura;
+  var d32=(alto*puertas*1.2)*1.5/100;
+  var h32=d32*F74*puertas, i32=h32*0.5;
+  var h33=cierres*F75;
+  var d34=(alto*2+ancho*2)/100;
+  var h34=d34*F76*empaque;
+
+  var F41=f27+f28+f29+f30+f31;
+  var G43=(g27+g28+g29+g30+g31)*pintura;
+  var H41=h32+h33+h34;
+  var I41=i27+i28+i29+i30+i31+i32;
+  var J43=(j27+j28+j29+j30+j31)*pintura;
+
+  return F41+G43+H41+I41+J43;
 }
 
 function renderPreciosTabla(){
@@ -219,6 +253,36 @@ function renderPreciosTabla(){
       +(desdeSheet?'📗 Sheet':'📋 Default')+'</td>'
       +'</tr>';
   });
+
+  // Cálculo de Costo Real y Precio antes de IVA
+  var costoActual = calcularCostoInterno();
+  var margen = num('margen');
+  var precioAntesIva = costoActual / (1 - margen / 100);
+  
+  // Cálculo de Utilidades reales (Precio Venta - Costo)
+  var importeUtilidad = precioAntesIva - costoActual;
+  var porcentajeUtilidad = precioAntesIva > 0 ? (importeUtilidad / precioAntesIva) * 100 : 0;
+
+  // Fila del costo
+  rows+='<tr style="border-top: 2px solid var(--line);">'
+    +'<td style="font-weight:700; color:var(--muted);">Costo de Fabricación</td>'
+    +'<td class="val" style="color:var(--text); font-weight:700;">$'+costoActual.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+    +'<td class="val src-default" style="text-align:right;font-size:12px; font-weight:700;">⚙️ Costo</td>'
+    +'</tr>';
+
+  // NUEVA SECCIÓN: Utilidad antes de IVA en Porcentaje e Importe
+  rows+='<tr style="border-top: 1px dashed var(--line); background-color: rgba(22, 163, 74, 0.05);">'
+    +'<td style="font-weight:700; color:var(--ok);">Utilidad de Venta (%)</td>'
+    +'<td class="val" style="color:var(--ok); font-weight:700;">'+porcentajeUtilidad.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'%</td>'
+    +'<td class="val src-sheet" style="text-align:right;font-size:12px; font-weight:700;">📈 Margen</td>'
+    +'</tr>';
+
+  rows+='<tr style="background-color: rgba(22, 163, 74, 0.05);">'
+    +'<td style="font-weight:700; color:var(--ok);">Utilidad de Venta ($)</td>'
+    +'<td class="val" style="color:var(--ok); font-weight:700;">$'+importeUtilidad.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+    +'<td class="val src-sheet" style="text-align:right;font-size:12px; font-weight:700;">💵 Ganancia</td>'
+    +'</tr>';
+
   document.getElementById('preciosTbody').innerHTML=rows;
 }
 
@@ -256,7 +320,6 @@ window.__precios = function(resp){
       var hora=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
       setStatus('#16a34a','Precios actualizados desde Google Sheets · '+hora);
       calcular();
-      renderPreciosTabla();
     }
   }catch(e){
     setStatus('#ef4444','No se pudo leer la hoja');
@@ -336,13 +399,7 @@ function calcular(){
   var total=totalUnit*cantidad;
 
   document.getElementById('precio').textContent=money(precio);
-  //document.getElementById('costo').textContent='$'+money(costo);
-  
-document.getElementById('costo').textContent='$'+money(precio);
-
-  
-
-
+  document.getElementById('costo').textContent=money(precio);
 
   document.getElementById('iva').textContent='$'+money(iva);
   document.getElementById('total').textContent='$'+money(total);
@@ -358,6 +415,9 @@ document.getElementById('costo').textContent='$'+money(precio);
   if(cantidad>1) q+='\nTotal con IVA: $'+money(total);
   document.getElementById('quote').textContent=q;
   window._quote=q;
+
+  // Renderizar la tabla para actualizar el Costo General y utilidades en vivo
+  renderPreciosTabla();
 }
 
 function copiar(){
@@ -371,7 +431,6 @@ document.querySelectorAll('input,select').forEach(function(el){
   el.addEventListener('input',calcular); el.addEventListener('change',calcular);
 });
 cargarPrecios();
-renderPreciosTabla();
 </script>
 </body>
 </html>
