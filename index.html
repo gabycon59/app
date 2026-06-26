@@ -407,7 +407,6 @@ function calcular(){
     detallesAcceso = ' ('+puertas+' PUERTA(S) CON '+closures+' CIERRE(S))';
   }
 
-  // Aquí se eliminó el prefijo numérico para que la descripción quede 100% limpia
   var desc= tipoLabel + ' MEDIDAS '+(alto||0)+'X'+(ancho||0)+'X'+(fondo||0)
     +', FABRICADO EN LAMINA GALVANIZADA CAL '+num('calCuerpo')
     + detallesAcceso
@@ -420,6 +419,11 @@ function calcular(){
   window._quote=q;
 
   renderPreciosTabla();
+}
+
+// CORREGIDO: Se agregó la función para procesar correctamente el link a WhatsApp
+function whatsapp(){ 
+  window.open('https://wa.me/?text='+encodeURIComponent(window._quote), '_blank'); 
 }
 
 document.querySelectorAll('input,select').forEach(function(el){
