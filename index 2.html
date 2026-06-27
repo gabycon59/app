@@ -50,13 +50,14 @@
   .quote-box{background:var(--field);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;
     white-space:pre-wrap;color:var(--muted);margin-top:12px;line-height:1.5}
   .hint{font-size:11px;color:var(--muted);margin-top:4px}
+  .cant-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
   .acordeon-btn{width:100%;background:none;border:none;color:var(--text);padding:0;
     display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:13px;font-weight:700;
     text-transform:uppercase;letter-spacing:.5px;color:var(--accent)}
   .acordeon-btn .arrow{transition:transform .25s;font-style:normal;font-size:16px}
   .acordeon-btn.open .arrow{transform:rotate(180deg)}
   .acordeon-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
-  .acordeon-body.open{max-height:1000px}
+  .acordeon-body.open{max-height:600px}
   .precio-tabla{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}
   .precio-tabla th{color:var(--muted);font-weight:600;text-align:left;padding:6px 4px;
     border-bottom:1px solid var(--line);font-size:12px;text-transform:uppercase}
@@ -65,29 +66,15 @@
   .precio-tabla .val{text-align:right;font-weight:700;color:var(--text)}
   .precio-tabla .src-sheet{color:var(--ok)}
   .precio-tabla .src-default{color:var(--muted)}
-  .precio-tabla .titulo-seccion-tabla{background:rgba(51,65,85,0.3);font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px}
 </style>
 </head>
 <body>
 
 <h1>🗄️ Cotizador de Gabinetes</h1>
-<p class="sub">Captura medidas, selecciona tipo y obtén el precio al instante</p>
+<p class="sub">NEMA 3R · captura medidas y obtén el precio al instante</p>
 <div id="status" style="font-size:12px;color:var(--muted);margin:-8px 0 14px;display:flex;align-items:center;gap:6px">
   <span id="statusDot" style="width:8px;height:8px;border-radius:50%;background:#64748b;display:inline-block"></span>
   <span id="statusTxt">Cargando precios…</span>
-</div>
-
-<div class="card">
-  <p class="section-title">Modelo de Gabinete</p>
-  <div class="field">
-    <label>Tipo de Gabinete</label>
-    <select id="tipoGabinete" onchange="cambiarTipoGabinete()">
-      <option value="N3R" selected>GABINETE N3R</option>
-      <option value="N1">GABINETE N1</option>
-      <option value="ZAPATO">GABINETE TIPO CAJA DE ZAPATO</option>
-      <option value="REGISTRO">GABINETE TIPO REGISTRO</option>
-    </select>
-  </div>
 </div>
 
 <div class="card">
@@ -118,7 +105,7 @@
   </div>
   <div class="grid2" style="margin-top:12px">
     <div>
-      <label>Puertas/Tapas</label>
+      <label>Puertas</label>
       <select id="puertas">
         <option value="0">0 Puertas</option>
         <option value="1" selected>1 Puerta</option>
@@ -165,16 +152,16 @@
 
 <div class="card" style="margin-top:14px">
   <button class="acordeon-btn" id="acordeonBtn" onclick="toggleAcordeon()">
-    <span>💰 Detalle de Costos e Insumos</span>
+    <span>💰 Precios cargados</span>
     <i class="arrow">▼</i>
   </button>
   <div class="acordeon-body" id="acordeonBody">
     <table class="precio-tabla">
       <thead>
         <tr>
-          <th>Concepto / Componente</th>
-          <th style="text-align:right">Costo Calculado</th>
-          <th style="text-align:right">Información</th>
+          <th>Concepto</th>
+          <th style="text-align:right">Precio</th>
+          <th style="text-align:right">Fuente</th>
         </tr>
       </thead>
       <tbody id="preciosTbody"></tbody>
@@ -183,30 +170,19 @@
 </div>
 
 <script>
+// ===== Precios — se leen de tu Google Sheet, con respaldo local =====
 var SHEET_ID='1iRD93pkI2b_WskdQSOmC3Wbm6TnhL5i5VGbPq5BaOcU';
 
 var DEFAULT_LAMINA = {14:486.13, 16:393.47, 18:315.73, 20:273.33, 22:215};
 var PRECIO_LAMINA = Object.assign({}, DEFAULT_LAMINA);
-var F73=40; var F74=35; var F75=65; var F76=35;
+var F73=40;
+var F74=35;
+var F75=65;
+var F76=35;
+var F77=0; // reservado
+var F78=0; // reservado
+// Rastreo de qué claves vinieron del sheet
 var _fromSheet = {};   
-
-var desgloseCostos = { cuerpo: 0, gorro: 0, tapaInf: 0, puerta: 0, platina: 0, bisagra: 0, cierres: 0, empaque: 0 };
-
-function cambiarTipoGabinete() {
-  var tipo = document.getElementById('tipoGabinete').value;
-  if(tipo === 'REGISTRO' || tipo === 'ZAPATO') {
-    document.getElementById('pintura').checked = false; 
-    document.getElementById('platina').checked = false; 
-    document.getElementById('puertas').value = "0";      
-    document.getElementById('cierres').value = "0";      
-  } else {
-    document.getElementById('pintura').checked = true;  
-    document.getElementById('platina').checked = true;
-    document.getElementById('puertas').value = "1";
-    document.getElementById('cierres').value = "1";
-  }
-  calcular();
-}
 
 function toggleAcordeon(){
   var btn=document.getElementById('acordeonBtn');
@@ -215,104 +191,34 @@ function toggleAcordeon(){
   body.classList.toggle('open');
 }
 
-function calcularCostoInterno(){
-  var alto=num('alto'), ancho=num('ancho'), fondo=num('fondo');
-  var pCuerpo=PRECIO_LAMINA[num('calCuerpo')]||0;
-  var pPlatina=PRECIO_LAMINA[num('calPlatina')]||0;
-  var pPuerta=PRECIO_LAMINA[num('calPuerta')]||0;
-  var pintura=chk('pintura'), platina=chk('platina');
-  var puertas=num('puertas'), cierres=num('cierres'), empaque=parseFloat(document.getElementById('empaque').value)||0;
-  var tipo = document.getElementById('tipoGabinete').value;
-
-  var d29=M2(alto*fondo*2+alto*ancho+alto*2*4*1.2);
-  var f29=pCuerpo*d29, g29=d29*F73*2*pintura, i29=f29*0.5, j29=i29*0.8*pintura;
-  desgloseCostos.cuerpo = f29 + g29 + i29 + j29;
-
-  var d30=M2((ancho+0.04)*(fondo+0.08)*1.2);
-  var f30=pCuerpo*d30, g30=d30*F73*2*pintura, i30=f30*0.5, j30=i30*0.8*pintura;
-  desgloseCostos.gorro = f30 + g30 + i30 + j30;
-
-  var d31=M2((ancho+0.04)*(fondo+0.04)*1.2);
-  var f31=pCuerpo*d31, g31=d31*F73*2*pintura, i31=f31*0.5, j31=i31*0.8*pintura;
-  desgloseCostos.tapaInf = f31 + g31 + i31 + j31;
-
-  var d27=M2((alto+4)*(ancho+4)*1.2);
-  var f27=pPuerta*d27, g27=d27*F73*2*pintura, i27=f27*0.5, j27=i27*0.8*pintura;
-  desgloseCostos.puerta = f27 + g27 + i27 + j27;
-
-  var f28=0, g28=0, i28=0, j28=0;
-  if(platina === 1) {
-    var d28=M2(alto*ancho*1.2);
-    f28=pPlatina*d28; g28=d28*F73*2*pintura; i28=f28*0.5; j28=i28*0.8*pintura;
-  }
-  desgloseCostos.platina = f28 + g28 + i28 + j28;
-
-  var h32=0, i32=0;
-  if(puertas > 0 && tipo !== 'REGISTRO' && tipo !== 'ZAPATO') {
-    var d32=(alto*puertas*1.2)*1.5/100;
-    h32=d32*F74*puertas; i32=h32*0.5;
-  }
-  desgloseCostos.bisagra = h32 + i32;
-
-  var h33=(tipo==='REGISTRO'||tipo==='ZAPATO'||puertas===0) ? 0 : (cierres*F75);
-  desgloseCostos.cierres = h33;
-  
-  var d34=(alto*2+ancho*2)/100;
-  var h34=d34*F76*empaque;
-  desgloseCostos.empaque = h34;
-
-  var F41=f27+f28+f29+f30+f31;
-  var G43=(g27+g28+g29+g30+g31)*pintura;
-  var H41=h32+h33+h34;
-  var I41=i27+i28+i29+i30+i31+i32;
-  var J43=(j27+j28+j29+j30+j31)*pintura;
-
-  return F41+G43+H41+I41+J43;
-}
-
 function renderPreciosTabla(){
   var rows='';
-  
-  rows += '<tr><td colspan="3" class="titulo-seccion-tabla">⚙️ Costo por Partes de Fabricación</td></tr>';
-  rows += '<tr><td>Estructura de Cuerpo Base</td><td class="val">$'+money(desgloseCostos.cuerpo)+'</td><td style="text-align:right; font-size:12px; color:var(--muted)">Lámina + Mano de Obra</td></tr>';
-  rows += '<tr><td>Desarrollo de Gorro Superior</td><td class="val">$'+money(desgloseCostos.gorro)+'</td><td style="text-align:right; font-size:12px; color:var(--muted)">Lámina + Mano de Obra</td></tr>';
-  rows += '<tr><td>Desarrollo de Tapa Inferior</td><td class="val">$'+money(desgloseCostos.tapaInf)+'</td><td style="text-align:right; font-size:12px; color:var(--muted)">Lámina + Mano de Obra</td></tr>';
-  rows += '<tr><td>Puerta / Frente de Acceso</td><td class="val">$'+money(desgloseCostos.puerta)+'</td><td style="text-align:right; font-size:12px; color:var(--muted)">Lámina + Mano de Obra</td></tr>';
-  rows += '<tr><td>Platina de Montaje Interno</td><td class="val">$'+money(desgloseCostos.platina)+'</td><td style="text-align:right; font-size:12px; color:var(--muted)">'+(chk('platina')?'Activa':'No incluye')+'</td></tr>';
-  rows += '<tr><td>Bisagra de Piano</td><td class="val">$'+money(desgloseCostos.bisagra)+'</td><td style="text-align:right; font-size:12px; color:var(--muted)">Herraje + Ensamble</td></tr>';
-  rows += '<tr><td>Cierres Mecánicos</td><td class="val">$'+money(desgloseCostos.cierres)+'</td><td style="text-align:right; font-size:12px; color:var(--muted)">Accesorios</td></tr>';
-  rows += '<tr><td>Empaque Perimetral</td><td class="val">$'+money(desgloseCostos.empaque)+'</td><td style="text-align:right; font-size:12px; color:var(--muted)">Sellado</td></tr>';
-
-  rows += '<tr><td colspan="3" class="titulo-seccion-tabla">📋 Tarifas Base de Insumos</td></tr>';
   var cals=[14,16,18,20,22];
   cals.forEach(function(c){
     var val=PRECIO_LAMINA[c];
     var desdeSheet=!!_fromSheet['cal'+c];
-    rows+='<tr><td>Lámina Cal '+c+' ($/m²)</td><td class="val">$'+val.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td class="val '+(desdeSheet?'src-sheet':'src-default')+'" style="font-size:12px">'+(desdeSheet?'📗 Sheet':'📋 Default')+'</td></tr>';
+    rows+='<tr>'
+      +'<td>Lámina Cal '+c+' ($/m²)</td>'
+      +'<td class="val">$'+val.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td class="val '+(desdeSheet?'src-sheet':'src-default')+'" style="text-align:right;font-size:12px">'
+      +(desdeSheet?'📗 Sheet':'📋 Default')+'</td>'
+      +'</tr>';
   });
-  
   var extras=[
-    {label:'Pintura ($/m²)', val:F73, key:'F73'},
-    {label:'Bisagra ($/ml)', val:F74, key:'F74'},
-    {label:'Cierre ($)', val:F75, key:'F75'},
-    {label:'Empaque ($/ml)', val:F76, key:'F76'},
+    {label:'Pintura ($/m²)',    val:F73, key:'F73'},
+    {label:'Bisagra ($/ml)',    val:F74, key:'F74'},
+    {label:'Cierre ($)',        val:F75, key:'F75'},
+    {label:'Empaque ($/ml)',    val:F76, key:'F76'},
   ];
   extras.forEach(function(e){
     var desdeSheet=!!_fromSheet[e.key];
-    rows+='<tr><td>'+e.label+'</td><td class="val">$'+e.val.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td class="val '+(desdeSheet?'src-sheet':'src-default')+'" style="font-size:12px">'+(desdeSheet?'📗 Sheet':'📋 Default')+'</td></tr>';
+    rows+='<tr>'
+      +'<td>'+e.label+'</td>'
+      +'<td class="val">$'+e.val.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td class="val '+(desdeSheet?'src-sheet':'src-default')+'" style="text-align:right;font-size:12px">'
+      +(desdeSheet?'📗 Sheet':'📋 Default')+'</td>'
+      +'</tr>';
   });
-
-  rows += '<tr><td colspan="3" class="titulo-seccion-tabla">📈 Rendimiento Financiero</td></tr>';
-  var costoActual = calcularCostoInterno();
-  var margen = num('margen');
-  var precioAntesIva = costoActual / (1 - margen / 100);
-  var importeUtilidad = precioAntesIva - costoActual;
-  var porcentajeUtilidad = precioAntesIva > 0 ? (importeUtilidad / precioAntesIva) * 100 : 0;
-
-  rows+='<tr style="border-top: 2px solid var(--line);"><td><b>Costo General de Fabricación</b></td><td class="val"><b>$'+costoActual.toLocaleString('es-MX',{minimumFractionDigits:2})+'</b></td><td class="val src-default" style="font-size:12px">⚙️ Neto</td></tr>';
-  rows+='<tr style="background:rgba(22,163,74,0.05);"><td style="color:var(--ok)"><b>Utilidad de Venta (%)</b></td><td class="val" style="color:var(--ok)"><b>'+porcentajeUtilidad.toLocaleString('es-MX',{minimumFractionDigits:2})+'%</b></td><td class="val src-sheet" style="font-size:12px">Margen</td></tr>';
-  rows+='<tr style="background:rgba(22,163,74,0.05);"><td style="color:var(--ok)"><b>Utilidad de Venta ($)</b></td><td class="val" style="color:var(--ok)"><b>$'+importeUtilidad.toLocaleString('es-MX',{minimumFractionDigits:2})+'</b></td><td class="val src-sheet" style="font-size:12px">Ganancia</td></tr>';
-
   document.getElementById('preciosTbody').innerHTML=rows;
 }
 
@@ -350,8 +256,11 @@ window.__precios = function(resp){
       var hora=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
       setStatus('#16a34a','Precios actualizados desde Google Sheets · '+hora);
       calcular();
+      renderPreciosTabla();
     }
-  }catch(e) { setStatus('#ef4444','No se pudo leer la hoja'); }
+  }catch(e){
+    setStatus('#ef4444','No se pudo leer la hoja');
+  }
 };
 
 function cargarPrecios(){
@@ -362,6 +271,9 @@ function cargarPrecios(){
   calcular();
   var s=document.createElement('script');
   s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json;responseHandler:__precios&_='+Date.now();
+  s.onerror=function(){
+    if(!localStorage.getItem('precios')) setStatus('#ef4444','Sin conexión · usando precios por defecto');
+  };
   document.head.appendChild(s);
 }
 
@@ -380,56 +292,86 @@ function money(n){ return n.toLocaleString('es-MX',{minimumFractionDigits:2,maxi
 
 function calcular(){
   var alto=num('alto'), ancho=num('ancho'), fondo=num('fondo');
+  var pCuerpo=PRECIO_LAMINA[num('calCuerpo')]||0;
+  var pPlatina=PRECIO_LAMINA[num('calPlatina')]||0;
+  var pPuerta=PRECIO_LAMINA[num('calPuerta')]||0;
   var pintura=chk('pintura'), platina=chk('platina');
-  var puertas=num('puertas'), closures=num('cierres');
+  var puertas=num('puertas'), cierres=num('cierres'), empaque=parseFloat(document.getElementById('empaque').value)||0;
   var margen=num('margen'), cantidad=num('cantidad')||1;
-  
-  var selectTipo = document.getElementById('tipoGabinete');
-  var tipoLabel = selectTipo.options[selectTipo.selectedIndex].text;
-  var tipoValue = selectTipo.value;
 
-  var costo=calcularCostoInterno();
+  // PUERTA
+  var d27=M2((alto+4)*(ancho+4)*1.2) * 1;
+  var f27=pPuerta*d27, g27=d27*F73*2*pintura, i27=f27*0.5, j27=i27*0.8*pintura;
+  // PLATINA
+  var d28=M2(alto*ancho*1.2)*platina;
+  var f28=pPlatina*d28*platina, g28=d28*F73*2*pintura*platina, i28=f28*0.5, j28=i28*0.8*pintura;
+  // CUERPO
+  var d29=M2(alto*fondo*2+alto*ancho+alto*2*4*1.2);
+  var f29=pCuerpo*d29, g29=d29*F73*2*pintura, i29=f29*0.5, j29=i29*0.8*pintura;
+  // GORRO
+  var d30=M2((ancho+0.04)*(fondo+0.08)*1.2);
+  var f30=pCuerpo*d30, g30=d30*F73*2*pintura, i30=f30*0.5, j30=i30*0.8*pintura;
+  // TAPA INFERIOR
+  var d31=M2((ancho+0.04)*(fondo+0.04)*1.2);
+  var f31=pCuerpo*d31, g31=d31*F73*2*pintura, i31=f31*0.5, j31=i31*0.8*pintura;
+  // BISAGRA
+  var d32=(alto*puertas*1.2)*1.5/100;
+  var h32=d32*F74*puertas, i32=h32*0.5;
+  // CIERRE
+  var h33=cierres*F75;
+  // EMPAQUE
+  var d34=(alto*2+ancho*2)/100;
+  var h34=d34*F76*empaque;
+
+  var F41=f27+f28+f29+f30+f31;
+  var G43=(g27+g28+g29+g30+g31)*pintura;
+  var H41=h32+h33+h34;
+  var I41=i27+i28+i29+i30+i31+i32;
+  var J43=(j27+j28+j29+j30+j31)*pintura;
+
+  var costo=F41+G43+H41+I41+J43;
   var precio=costo/(1-margen/100);
   var iva=precio*0.16;
-  var total= (precio+iva)*cantidad;
+  var totalUnit=precio+iva;
+  var total=totalUnit*cantidad;
 
   document.getElementById('precio').textContent=money(precio);
-  document.getElementById('costo').textContent=money(precio);
+  //document.getElementById('costo').textContent='$'+money(costo);
+  
+document.getElementById('costo').textContent='$'+money(precio);
+
+  
+
+
+
   document.getElementById('iva').textContent='$'+money(iva);
   document.getElementById('total').textContent='$'+money(total);
   document.getElementById('cantLbl').textContent=cantidad;
 
-  var detallesAcceso = "";
-  if(tipoValue === 'REGISTRO' || tipoValue === 'ZAPATO'){
-    detallesAcceso = ', CON TAPA DESMONTABLE ATORNILLADA';
-    platina = 0; 
-  } else {
-    detallesAcceso = ' ('+puertas+' PUERTA(S) CON '+closures+' CIERRE(S))';
-  }
-
-  var desc= tipoLabel + ' MEDIDAS '+(alto||0)+'X'+(ancho||0)+'X'+(fondo||0)
+  // descripción estilo cotización
+  var desc='GABINETE NEMA 3R MEDIDAS '+(alto||0)+'X'+(ancho||0)+'X'+(fondo||0)
     +', FABRICADO EN LAMINA GALVANIZADA CAL '+num('calCuerpo')
-    + detallesAcceso
-    +(platina?' Y PLATINA DE MONTAJE CAL '+num('calPlatina'):'')
+    +' ('+puertas+' PUERTA(S) CON '+cierres+' CIERRE(S))'
+    +(platina?' Y PLATINA CAL '+num('calPlatina'):'')
     +(pintura?', PINTURA EN POLVO TERMO ENDURECIBLE':', SIN PINTAR');
-    
   var q=desc+'\n\n'+cantidad+' PZA(S)  —  $'+money(precio)+' c/u + IVA';
   if(cantidad>1) q+='\nTotal con IVA: $'+money(total);
   document.getElementById('quote').textContent=q;
   window._quote=q;
-
-  renderPreciosTabla();
 }
 
-// CORREGIDO: Se agregó la función para procesar correctamente el link a WhatsApp
-function whatsapp(){ 
-  window.open('https://wa.me/?text='+encodeURIComponent(window._quote), '_blank'); 
+function copiar(){
+  navigator.clipboard.writeText(window._quote).then(function(){
+    var b=event.target; var t=b.textContent; b.textContent='✓ Copiado'; setTimeout(function(){b.textContent=t;},1500);
+  });
 }
+function whatsapp(){ window.open('https://wa.me/?text='+encodeURIComponent(window._quote),'_blank'); }
 
 document.querySelectorAll('input,select').forEach(function(el){
   el.addEventListener('input',calcular); el.addEventListener('change',calcular);
 });
 cargarPrecios();
+renderPreciosTabla();
 </script>
 </body>
 </html>
