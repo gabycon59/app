@@ -31,7 +31,7 @@ function doGet(e) {
   try {
     var ENCABEZADOS = [
       'Folio', 'Fecha', 'Cliente', 'Producto', 'Medidas (cm)',
-      'Material', 'Calibre Platina', 'Cantidad',
+      'Material', 'Calibre Platina', 'N° Cierres', 'Empaque', 'Cantidad',
       'Precio Unit.', 'Total c/IVA', 'Registrado'
     ];
 
@@ -56,13 +56,15 @@ function doGet(e) {
       p.medidas        || '',
       p.material       || '',
       p.calibrePlatina || '',
+      p.cierres        || '',
+      p.empaque        || '',
       p.cantidad       || '',
       p.precio         || '',
       p.total          || '',
       new Date()
     ]);
 
-    return responder(p.callback, { ok: true, folio: folio, ver: 'platina-v4' });
+    return responder(p.callback, { ok: true, folio: folio, ver: 'cierres-empaque-v5' });
   } catch (err) {
     return responder(e.parameter.callback, { ok: false, error: String(err) });
   } finally {
