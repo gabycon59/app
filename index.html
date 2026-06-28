@@ -78,6 +78,14 @@
 </div>
 
 <div class="card">
+  <p class="section-title">Datos del Cliente</p>
+  <div class="field">
+    <label>Nombre del Cliente</label>
+    <input id="cliente" type="text" placeholder="Ej. Juan Pérez / Empresa S.A.">
+  </div>
+</div>
+
+<div class="card">
   <p class="section-title">Modelo de Gabinete</p>
   <div class="field">
     <label>Tipo de Gabinete</label>
@@ -414,6 +422,8 @@ function calcular(){
   var q='*COTIZACIÓN*\n';
   q+='*Gabinetes y Controles Hermosillo*\n';
   q+='📅 '+fecha+'\n';
+  var cliente=document.getElementById('cliente').value.trim();
+  if(cliente) q+='*Atención a:* '+cliente+'\n';
   q+='━━━━━━━━━━━━━━━━━\n';
   q+='*Producto:* '+tipoLabel+'\n';
   q+='*Medidas:* '+(alto||0)+' × '+(ancho||0)+' × '+(fondo||0)+' cm\n';
