@@ -38,7 +38,8 @@ function doGet(e) {
     if (hoja.getLastRow() === 0) {
       hoja.appendRow([
         'Folio', 'Fecha', 'Cliente', 'Producto', 'Medidas (cm)',
-        'Material', 'Cantidad', 'Precio Unit.', 'Total c/IVA', 'Registrado'
+        'Material', 'Calibre Platina', 'N° Cierres', 'Cantidad',
+        'Precio Unit.', 'Total c/IVA', 'Registrado'
       ]);
       hoja.setFrozenRows(1);
     }
@@ -48,14 +49,16 @@ function doGet(e) {
 
     hoja.appendRow([
       folio,
-      p.fecha    || '',
-      p.cliente  || '',
-      p.producto || '',
-      p.medidas  || '',
-      p.material || '',
-      p.cantidad || '',
-      p.precio   || '',
-      p.total    || '',
+      p.fecha          || '',
+      p.cliente        || '',
+      p.producto       || '',
+      p.medidas        || '',
+      p.material       || '',
+      p.calibrePlatina || '',
+      p.cierres        || '',
+      p.cantidad       || '',
+      p.precio         || '',
+      p.total          || '',
       new Date()
     ]);
 
