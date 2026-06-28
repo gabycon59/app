@@ -401,20 +401,35 @@ function calcular(){
 
   var detallesAcceso = "";
   if(tipoValue === 'REGISTRO' || tipoValue === 'ZAPATO'){
-    detallesAcceso = ', CON TAPA DESMONTABLE ATORNILLADA';
-    platina = 0; 
+    detallesAcceso = 'Tapa desmontable atornillada';
+    platina = 0;
   } else {
-    detallesAcceso = ' ('+puertas+' PUERTA(S) CON '+closures+' CIERRE(S))';
+    detallesAcceso = puertas+' puerta(s) con '+closures+' cierre(s)';
   }
 
-  var desc= tipoLabel + ' MEDIDAS '+(alto||0)+'X'+(ancho||0)+'X'+(fondo||0)
-    +', FABRICADO EN LAMINA GALVANIZADA CAL '+num('calCuerpo')
-    + detallesAcceso
-    +(platina?' Y PLATINA DE MONTAJE CAL '+num('calPlatina'):'')
-    +(pintura?', PINTURA EN POLVO TERMO ENDURECIBLE':', SIN PINTAR');
-    
-  var q=desc+'\n\n'+cantidad+' PZA(S)  —  $'+money(precio)+' c/u + IVA';
-  if(cantidad>1) q+='\nTotal con IVA: $'+money(total);
+  var fecha = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  var subtotal = precio*cantidad;
+  var ivaTotal = iva*cantidad;
+
+  var q='*COTIZACIÓN*\n';
+  q+='*Gabinetes y Controles Hermosillo*\n';
+  q+='📅 '+fecha+'\n';
+  q+='━━━━━━━━━━━━━━━━━\n';
+  q+='*Producto:* '+tipoLabel+'\n';
+  q+='*Medidas:* '+(alto||0)+' × '+(ancho||0)+' × '+(fondo||0)+' cm\n';
+  q+='*Material:* Lámina galvanizada Cal '+num('calCuerpo')+'\n';
+  q+='*Acceso:* '+detallesAcceso+'\n';
+  if(platina) q+='*Platina:* Montaje Cal '+num('calPlatina')+'\n';
+  q+='*Acabado:* '+(pintura?'Pintura en polvo termo endurecible':'Sin pintar')+'\n';
+  q+='━━━━━━━━━━━━━━━━━\n';
+  q+='*Cantidad:* '+cantidad+' pza(s)\n';
+  q+='*Precio unitario:* $'+money(precio)+' + IVA\n';
+  if(cantidad>1) q+='*Subtotal:* $'+money(subtotal)+'\n';
+  q+='*IVA (16%):* $'+money(ivaTotal)+'\n';
+  q+='*TOTAL c/IVA:* $'+money(total)+'\n\n';
+  q+='_Precios sujetos a cambio sin previo aviso._\n';
+  q+='_Gracias por su preferencia._';
+
   document.getElementById('quote').textContent=q;
   window._quote=q;
 
