@@ -31,8 +31,8 @@ function doGet(e) {
   try {
     var ENCABEZADOS = [
       'Folio', 'Fecha', 'Cliente', 'Producto', 'Medidas (cm)',
-      'Material', 'Calibre Platina', 'N° Cierres', 'Empaque', 'Cantidad',
-      'Precio Unit.', 'Total c/IVA', 'Registrado'
+      'Material', 'Calibre Platina', 'N° Puertas', 'N° Cierres', 'Empaque',
+      'Cantidad', 'Precio Unit.', 'Total antes de IVA', 'Total c/IVA', 'Registrado'
     ];
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -56,15 +56,17 @@ function doGet(e) {
       p.medidas        || '',
       p.material       || '',
       p.calibrePlatina || '',
+      p.puertas        || '',
       p.cierres        || '',
       p.empaque        || '',
       p.cantidad       || '',
       p.precio         || '',
+      p.subtotal       || '',
       p.total          || '',
       new Date()
     ]);
 
-    return responder(p.callback, { ok: true, folio: folio, ver: 'cierres-empaque-v5' });
+    return responder(p.callback, { ok: true, folio: folio, ver: 'puertas-subtotal-v6' });
   } catch (err) {
     return responder(e.parameter.callback, { ok: false, error: String(err) });
   } finally {

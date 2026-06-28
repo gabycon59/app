@@ -452,10 +452,12 @@ function calcular(){
     medidas:(alto||0)+'x'+(ancho||0)+'x'+(fondo||0),
     material:'Cal '+num('calCuerpo'),
     calibrePlatina:platina?('Cal '+num('calPlatina')):'Sin platina',
+    puertas:puertas,
     cierres:closures,
     empaque:empaque?'Sí':'No',
     cantidad:cantidad,
     precio:money(precio),
+    subtotal:money(subtotal),
     total:money(total)
   };
 
@@ -480,8 +482,8 @@ function registrarCotizacion(folio, d){
     callback:'__logCot', folio:fmtFolio(folio),
     fecha:d.fecha, cliente:d.cliente, producto:d.producto, medidas:d.medidas,
     material:d.material, calibrePlatina:d.calibrePlatina,
-    cierres:d.cierres, empaque:d.empaque,
-    cantidad:d.cantidad, precio:d.precio, total:d.total
+    puertas:d.puertas, cierres:d.cierres, empaque:d.empaque,
+    cantidad:d.cantidad, precio:d.precio, subtotal:d.subtotal, total:d.total
   });
   var s=document.createElement('script');
   s.src=APPS_SCRIPT_URL+'?'+params.toString();
