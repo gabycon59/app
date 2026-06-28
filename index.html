@@ -443,12 +443,56 @@ function calcular(){
   document.getElementById('quote').textContent=q;
   window._quote=q;
 
+  window._cotData={
+    fecha:fecha,
+    cliente:cliente,
+    producto:tipoLabel,
+    medidas:(alto||0)+'x'+(ancho||0)+'x'+(fondo||0),
+    material:'Cal '+num('calCuerpo'),
+    cantidad:cantidad,
+    precio:money(precio),
+    total:money(total)
+  };
+
   renderPreciosTabla();
 }
 
+// ====== Registro consecutivo de cotizaciones en Google Sheets ======
+// Pega aquí la URL del Web App que obtienes al implementar el Apps Script
+// (ver archivo apps-script-cotizaciones.gs). Mientras esté vacío, la app
+// funciona igual pero no guarda en la hoja.
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyybHdl-_Qm_8zK2IebaR_dM9FyZ4T7q2ehAk6rUzNsfhL2Fy-F5HdEaq6dqDQJgpB-wg/exec';
+
+function fmtFolio(n){ return ('000'+n).slice(-3); }
+
+function siguienteFolio(){
+  return parseInt(localStorage.getItem('folioCotizacion')||'0',10)+1;
+}
+
+function registrarCotizacion(folio, d){
+  if(!APPS_SCRIPT_URL){ return; } // aún no configurado
+  var params=new URLSearchParams({
+    callback:'__logCot', folio:fmtFolio(folio),
+    fecha:d.fecha, cliente:d.cliente, producto:d.producto, medidas:d.medidas,
+    material:d.material, cantidad:d.cantidad, precio:d.precio, total:d.total
+  });
+  var s=document.createElement('script');
+  s.src=APPS_SCRIPT_URL+'?'+params.toString();
+  s.onerror=function(){ setStatus('#ef4444','No se pudo guardar en la hoja'); };
+  document.head.appendChild(s);
+}
+
+window.__logCot=function(r){
+  if(r&&r.ok){ setStatus('#16a34a','Cotización '+r.folio+' guardada en tu hoja'); }
+};
+
 // CORREGIDO: Se agregó la función para procesar correctamente el link a WhatsApp
-function whatsapp(){ 
-  window.open('https://wa.me/?text='+encodeURIComponent(window._quote), '_blank'); 
+function whatsapp(){
+  var folio=siguienteFolio();
+  localStorage.setItem('folioCotizacion',folio);
+  registrarCotizacion(folio, window._cotData);
+  var msg=window._quote.replace('*COTIZACIÓN*','*COTIZACIÓN N° '+fmtFolio(folio)+'*');
+  window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
 }
 
 document.querySelectorAll('input,select').forEach(function(el){
