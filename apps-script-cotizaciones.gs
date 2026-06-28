@@ -29,20 +29,21 @@ function doGet(e) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000); // evita folios duplicados si se envían dos a la vez
   try {
+    var ENCABEZADOS = [
+      'Folio', 'Fecha', 'Cliente', 'Producto', 'Medidas (cm)',
+      'Material', 'Calibre Platina', 'N° Cierres', 'Cantidad',
+      'Precio Unit.', 'Total c/IVA', 'Registrado'
+    ];
+
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var hoja = ss.getSheetByName('Cotizaciones');
     if (!hoja) {
       hoja = ss.insertSheet('Cotizaciones');
     }
-    // Encabezados la primera vez
-    if (hoja.getLastRow() === 0) {
-      hoja.appendRow([
-        'Folio', 'Fecha', 'Cliente', 'Producto', 'Medidas (cm)',
-        'Material', 'Calibre Platina', 'N° Cierres', 'Cantidad',
-        'Precio Unit.', 'Total c/IVA', 'Registrado'
-      ]);
-      hoja.setFrozenRows(1);
-    }
+    // Asegura que la fila de encabezados siempre esté actualizada
+    // (escribe los títulos aunque la pestaña ya existiera de antes).
+    hoja.getRange(1, 1, 1, ENCABEZADOS.length).setValues([ENCABEZADOS]);
+    hoja.setFrozenRows(1);
 
     var p = e.parameter;
     var folio = p.folio || ('000' + hoja.getLastRow()).slice(-3);
