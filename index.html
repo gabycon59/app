@@ -390,6 +390,7 @@ function calcular(){
   var alto=num('alto'), ancho=num('ancho'), fondo=num('fondo');
   var pintura=chk('pintura'), platina=chk('platina');
   var puertas=num('puertas'), closures=num('cierres');
+  var empaque=document.getElementById('empaque').value==='1';
   var margen=num('margen'), cantidad=num('cantidad')||1;
   
   var selectTipo = document.getElementById('tipoGabinete');
@@ -431,6 +432,7 @@ function calcular(){
   q+='*Acceso:* '+detallesAcceso+'\n';
   if(platina) q+='*Platina:* Montaje Cal '+num('calPlatina')+'\n';
   q+='*Acabado:* '+(pintura?'Pintura en polvo termo endurecible':'Sin pintar')+'\n';
+  q+='*Empaque:* '+(empaque?'Incluye empaque perimetral en puerta':'Sin empaque')+'\n';
   q+='━━━━━━━━━━━━━━━━━\n';
   q+='*Cantidad:* '+cantidad+' pza(s)\n';
   q+='*Precio unitario:* $'+money(precio)+' + IVA\n';
