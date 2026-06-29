@@ -31,7 +31,7 @@ function doGet(e) {
   try {
     var ENCABEZADOS = [
       'Folio', 'Fecha', 'Cliente', 'Producto', 'Medidas (cm)',
-      'Material', 'Calibre Platina', 'N° Puertas', 'N° Cierres', 'Empaque',
+      'Material', 'Calibre Platina', 'N° Puertas', 'N° Cierres', 'Empaque', 'Pintura',
       'Cantidad', 'Precio Unit.', 'Total antes de IVA', 'Total c/IVA', 'Registrado'
     ];
 
@@ -59,6 +59,7 @@ function doGet(e) {
       p.puertas        || '',
       p.cierres        || '',
       p.empaque        || '',
+      p.pintura        || '',
       p.cantidad       || '',
       p.precio         || '',
       p.subtotal       || '',
@@ -66,7 +67,7 @@ function doGet(e) {
       new Date()
     ]);
 
-    return responder(p.callback, { ok: true, folio: folio, ver: 'puertas-subtotal-v6' });
+    return responder(p.callback, { ok: true, folio: folio, ver: 'pintura-v7' });
   } catch (err) {
     return responder(e.parameter.callback, { ok: false, error: String(err) });
   } finally {
